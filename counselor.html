@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>対応可否登録 — カウンセリング</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2; --surface: #FFFFFF; --surface2: #F0EFE9;
+    --border: #E2E0D8; --border2: #CCCAB8;
+    --text: #1A1916; --text2: #6B6960; --text3: #A8A69C;
+    --purple: #4A42A8; --purple-light: #EEEDFC; --purple-mid: #7B72D4;
+    --green: #1A7A56; --green-light: #E2F4EC;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+  .header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex; align-items: center; justify-content: space-between;
+    height: 56px; position: sticky; top: 0; z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--purple); display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .logo-name { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+  .logo-sub { font-size: 11px; color: var(--text2); margin-left: 4px; }
+  .user-pill { display: flex; align-items: center; gap: 8px; }
+  .user-select {
+    border: 1px solid var(--border2); border-radius: var(--radius-sm);
+    padding: 5px 10px; font-size: 12px; font-family: inherit;
+    background: var(--surface); color: var(--text); cursor: pointer;
+  }
+
+  .main { max-width: 720px; margin: 0 auto; padding: 24px 20px; }
+
+  .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .month-nav { display: flex; align-items: center; gap: 10px; }
+  .month-label { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; min-width: 120px; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); color: var(--text); font-size: 12px; font-family: inherit; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .btn:hover { background: var(--bg); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--purple); color: white; border-color: var(--purple); }
+  .btn-primary:hover { background: #3D368F; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  .cal-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+  .cal-table th { font-size: 11px; font-weight: 600; color: var(--text2); padding: 6px 4px; text-align: center; background: transparent; border: none; letter-spacing: 0.02em; }
+  .cal-table th.sat { color: #A05C0A; }
+  .cal-table th.sun { color: #C0392B; }
+
+  .day-cell { border: 1px solid var(--border); padding: 7px 8px; vertical-align: top; background: var(--surface); min-height: 80px; }
+  .day-cell.other-month { background: var(--bg); }
+  .day-cell.other-month .day-num { color: var(--text3); }
+  .day-cell.today .day-num { background: var(--purple); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+  .day-num { font-size: 12px; font-weight: 600; margin-bottom: 6px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+
+  .my-slots { display: flex; flex-direction: column; gap: 4px; }
+  .my-slot-btn { font-size: 10px; border-radius: 4px; padding: 4px 6px; cursor: pointer; border: none; font-family: inherit; font-weight: 500; display: flex; align-items: center; justify-content: space-between; transition: opacity 0.15s; width: 100%; }
+  .my-slot-btn:hover { opacity: 0.75; }
+  .my-slot-btn.avail { background: var(--green-light); color: var(--green); }
+  .my-slot-btn.unavail { background: var(--surface2); color: var(--text3); }
+  .my-slot-btn .s-label { font-size: 9px; font-weight: 700; opacity: 0.7; }
+
+  .save-bar { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+  .save-hint { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .summary-item { text-align: center; }
+  .summary-num { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; }
+  .summary-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  .toast { position: fixed; bottom: 80px; right: 24px; background: var(--text); color: white; border-radius: var(--radius); padding: 12px 18px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 16px; height: 16px; fill: #4ADE80; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></div>
+    <span class="logo-name">MindBook</span>
+    <span class="logo-sub">相談員ポータル</span>
+  </div>
+  <div class="user-pill">
+    <span style="font-size:12px;color:var(--text2);">相談員：</span>
+    <select class="user-select" id="user-select" onchange="onUserChange()">
+      <option value="山田">山田 先生</option>
+      <option value="中村">中村 先生</option>
+      <option value="小林">小林 先生</option>
+      <option value="加藤">加藤 先生</option>
+      <option value="松本">松本 先生</option>
+      <option value="井上">井上 先生</option>
+    </select>
+  </div>
+</header>
+
+<div class="main">
+  <div class="page-title">対応可否を登録する</div>
+  <div class="page-sub" id="page-sub">各日の午前・午後をクリックして対応可否を切り替えてください</div>
+
+  <div class="summary-card" id="summary-card"></div>
+
+  <div class="toolbar">
+    <div class="month-nav">
+      <button class="btn btn-sm" onclick="changeMonth(-1)">←</button>
+      <div class="month-label" id="month-label"></div>
+      <button class="btn btn-sm" onclick="changeMonth(1)">→</button>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-sm" onclick="setAll(true)">月全体：すべて可</button>
+      <button class="btn btn-sm" onclick="setAll(false)">すべて不可</button>
+    </div>
+  </div>
+
+  <div class="legend" style="margin-bottom:12px;">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green-light);border:1px solid #9FE0C0;"></div>対応可</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--surface2);border:1px solid var(--border2);"></div>対応不可</div>
+  </div>
+
+  <table class="cal-table">
+    <thead><tr>
+      <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th><th class="sun">日</th>
+    </tr></thead>
+    <tbody id="cal-body"></tbody>
+  </table>
+</div>
+
+<div class="save-bar">
+  <div class="save-hint" id="save-hint">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    変更があります。保存を忘れずに。
+  </div>
+  <button class="btn btn-primary" onclick="save()">登録内容を保存する</button>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+  const now = new Date();
+  let year = now.getFullYear(), month = now.getMonth();
+  const avail = {};
+
+  function currentUser() { return document.getElementById('user-select').value; }
+
+  function key(u, y, m, d, s) { return `${u}_${y}_${m}_${d}_${s}`; }
+  function getAvail(u, y, m, d, s) {
+    const k = key(u, y, m, d, s);
+    if (!(k in avail)) avail[k] = true;
+    return avail[k];
+  }
+  function setAvail(u, y, m, d, s, v) { avail[key(u, y, m, d, s)] = v; }
+
+  function daysInMonth(y, m) { return new Date(y, m+1, 0).getDate(); }
+  function firstDOW(y, m) { let d = new Date(y,m,1).getDay(); return d===0?6:d-1; }
+
+  function render() {
+    const u = currentUser();
+    document.getElementById('month-label').textContent = `${year}年 ${month+1}月`;
+    document.getElementById('page-sub').textContent = `${u} 先生 — 各日の午前・午後をクリックして対応可否を切り替えてください`;
+
+    const tbody = document.getElementById('cal-body');
+    tbody.innerHTML = '';
+    const fd = firstDOW(year, month), dim = daysInMonth(year, month);
+    const prevDim = daysInMonth(year, month-1);
+    let day = 1, prevDay = prevDim - fd + 1, nextDay = 1;
+    const total = Math.ceil((fd + dim) / 7) * 7;
+
+    for (let i = 0; i < total; i++) {
+      if (i % 7 === 0) tbody.insertRow();
+      const row = tbody.rows[tbody.rows.length-1];
+      const td = row.insertCell(); td.className = 'day-cell';
+      let cd, cy = year, cm = month, other = false;
+      if (i < fd) { cd = prevDay++; cm = month-1; other = true; if (cm < 0) { cm = 11; cy--; } }
+      else if (day > dim) { cd = nextDay++; cm = month+1; other = true; if (cm > 11) { cm = 0; cy++; } }
+      else { cd = day++; }
+      if (other) td.classList.add('other-month');
+      const isToday = cy===now.getFullYear() && cm===now.getMonth() && cd===now.getDate();
+      if (isToday) td.classList.add('today');
+      const numDiv = document.createElement('div'); numDiv.className = 'day-num'; numDiv.textContent = cd;
+      td.appendChild(numDiv);
+      if (!other) {
+        const slotsDiv = document.createElement('div'); slotsDiv.className = 'my-slots';
+        ['AM','PM'].forEach(s => {
+          const av = getAvail(u, cy, cm, cd, s);
+          const btn = document.createElement('button');
+          btn.className = `my-slot-btn ${av ? 'avail' : 'unavail'}`;
+          btn.innerHTML = `<span class="s-label">${s==='AM'?'午前':'午後'}</span><span>${av?'○':'✕'}</span>`;
+          const _cy=cy,_cm=cm,_cd=cd;
+          btn.onclick = () => {
+            const cur = getAvail(u, _cy, _cm, _cd, s);
+            setAvail(u, _cy, _cm, _cd, s, !cur);
+            btn.className = `my-slot-btn ${!cur ? 'avail' : 'unavail'}`;
+            btn.innerHTML = `<span class="s-label">${s==='AM'?'午前':'午後'}</span><span>${!cur?'○':'✕'}</span>`;
+            updateHint(true); updateSummary();
+          };
+          slotsDiv.appendChild(btn);
+        });
+        td.appendChild(slotsDiv);
+      }
+    }
+    updateSummary();
+  }
+
+  function updateSummary() {
+    const u = currentUser();
+    const dim = daysInMonth(year, month);
+    let amOk=0, pmOk=0, total=0;
+    for (let d=1; d<=dim; d++) {
+      if (getAvail(u, year, month, d, 'AM')) amOk++;
+      if (getAvail(u, year, month, d, 'PM')) pmOk++;
+      total++;
+    }
+    document.getElementById('summary-card').innerHTML = `
+      <div class="summary-item"><div class="summary-num" style="color:var(--purple)">${total}</div><div class="summary-label">今月の日数</div></div>
+      <div class="summary-item"><div class="summary-num" style="color:var(--green)">${amOk}</div><div class="summary-label">午前 対応可</div></div>
+      <div class="summary-item"><div class="summary-num" style="color:var(--green)">${pmOk}</div><div class="summary-label">午後 対応可</div></div>
+      <div class="summary-item"><div class="summary-num" style="color:var(--text2)">${total*2 - amOk - pmOk}</div><div class="summary-label">対応不可スロット</div></div>`;
+  }
+
+  function updateHint(changed) {
+    document.getElementById('save-hint').innerHTML = changed
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 未保存の変更があります`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg> 保存済み`;
+  }
+
+  function setAll(val) {
+    const u = currentUser();
+    const dim = daysInMonth(year, month);
+    for (let d=1; d<=dim; d++) ['AM','PM'].forEach(s => setAvail(u, year, month, d, s, val));
+    render(); updateHint(true);
+  }
+
+  function changeMonth(d) {
+    month += d;
+    if (month < 0) { month = 11; year--; }
+    if (month > 11) { month = 0; year++; }
+    render();
+  }
+
+  function onUserChange() { render(); updateHint(false); }
+
+  function save() {
+    updateHint(false);
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = `${currentUser()} 先生の対応可否を保存しました`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  render();
+</script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者ダッシュボード — カウンセリング</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2; --surface: #FFFFFF; --surface2: #F0EFE9;
+    --border: #E2E0D8; --border2: #CCCAB8;
+    --text: #1A1916; --text2: #6B6960; --text3: #A8A69C;
+    --purple: #4A42A8; --purple-light: #EEEDFC;
+    --green: #1A7A56; --green-light: #E2F4EC;
+    --red: #C0392B; --red-light: #FDECEA;
+    --amber: #A05C0A; --amber-light: #FEF3E2;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 10; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--purple); display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .logo-name { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+  .logo-sub { font-size: 11px; color: var(--text2); margin-left: 4px; }
+  .admin-badge { background: var(--purple-light); color: var(--purple); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+  .page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border2); background: var(--surface); color: var(--text); font-size: 12px; font-family: inherit; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .btn:hover { background: var(--bg); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--purple); color: white; border-color: var(--purple); }
+  .btn-primary:hover { background: #3D368F; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn-ghost:hover { background: var(--bg); border-color: var(--border); }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Summary metrics */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .metric-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+  .metric-value { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+
+  /* Calendar */
+  .cal-layout { display: flex; gap: 20px; }
+  .cal-main { flex: 1; min-width: 0; }
+  .cal-side { width: 300px; flex-shrink: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; overflow: hidden; max-height: 600px; }
+  .cal-side.hidden { display: none; }
+
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .month-nav { display: flex; align-items: center; gap: 10px; }
+  .month-label { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; min-width: 120px; }
+
+  .cal-table { width: 100%; border-collapse: collapse; }
+  .cal-table th { font-size: 11px; font-weight: 600; color: var(--text2); padding: 6px 4px; text-align: center; background: transparent; border: none; }
+  .cal-table th.sat { color: var(--amber); }
+  .cal-table th.sun { color: var(--red); }
+
+  .day-cell { border: 1px solid var(--border); padding: 6px 7px; vertical-align: top; cursor: pointer; min-height: 76px; background: var(--surface); transition: background 0.1s; }
+  .day-cell:hover { background: var(--purple-light); }
+  .day-cell.selected { background: var(--purple-light); border-color: #7B72D4; }
+  .day-cell.other-month { background: var(--bg); cursor: default; }
+  .day-cell.other-month:hover { background: var(--bg); }
+  .day-cell.today .day-num { background: var(--purple); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+  .day-num { font-size: 12px; font-weight: 600; margin-bottom: 5px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+  .day-cell.other-month .day-num { color: var(--text3); }
+
+  .slot-pills { display: flex; flex-direction: column; gap: 3px; }
+  .slot-pill { font-size: 10px; border-radius: 4px; padding: 2px 6px; display: flex; align-items: center; justify-content: space-between; }
+  .pill-am { background: #EBF5FF; color: #1D5F8A; }
+  .pill-pm { background: var(--green-light); color: var(--green); }
+  .pill-none { background: var(--surface2); color: var(--text3); }
+  .pill-label { font-weight: 700; font-size: 9px; }
+  .pill-count { font-weight: 600; }
+
+  /* Detail panel */
+  .detail-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .detail-date-label { font-size: 14px; font-weight: 600; }
+  .detail-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .detail-footer { padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+  .slot-block { margin-bottom: 18px; }
+  .slot-block-title { font-size: 12px; font-weight: 600; color: var(--text2); padding: 6px 10px; background: var(--bg); border-radius: var(--radius-sm); margin-bottom: 8px; }
+  .counselor-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  .counselor-row:last-child { border-bottom: none; }
+  .counselor-info { display: flex; align-items: center; gap: 9px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .cn-name { font-size: 13px; font-weight: 500; }
+  .cn-spec { font-size: 10px; color: var(--text2); }
+
+  .toggle { width: 38px; height: 22px; border-radius: 11px; background: var(--border2); border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
+  .toggle.on { background: var(--purple); }
+  .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .toggle.on::after { transform: translateX(16px); }
+  .toggle-label { font-size: 11px; color: var(--text2); margin-right: 6px; }
+
+  /* List view */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .form-input { padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; background: var(--surface); color: var(--text); }
+
+  .counselor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .counselor-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .card-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .card-name { font-size: 14px; font-weight: 600; }
+  .card-spec { font-size: 11px; color: var(--text2); }
+  .card-body { padding: 12px 16px; }
+  .slot-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .slot-row:last-child { border-bottom: none; }
+  .slot-date { color: var(--text2); }
+  .slot-badges { display: flex; gap: 6px; }
+  .slot-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .badge-ok { background: var(--green-light); color: var(--green); }
+  .badge-ng { background: var(--surface2); color: var(--text3); }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white; border-radius: var(--radius); padding: 12px 18px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 16px; height: 16px; fill: #4ADE80; flex-shrink: 0; }
+
+  @media (max-width: 700px) {
+    .metrics { grid-template-columns: repeat(2,1fr); }
+    .cal-layout { flex-direction: column; }
+    .cal-side { width: 100%; max-height: 400px; }
+    .counselor-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></div>
+    <span class="logo-name">MindBook</span>
+    <span class="logo-sub">管理者ダッシュボード</span>
+  </div>
+  <span class="admin-badge">管理者</span>
+</header>
+
+<div class="main">
+  <div class="page-title">全相談員の対応状況</div>
+  <div class="page-sub">全相談員の対応可否をカレンダーで確認・編集できます</div>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('calendar', this)">カレンダー表示</div>
+    <div class="tab" onclick="switchTab('list', this)">相談員別一覧</div>
+  </div>
+
+  <!-- カレンダータブ -->
+  <div id="tab-calendar" class="tab-content active">
+    <div class="cal-layout">
+      <div class="cal-main">
+        <div class="toolbar">
+          <div class="month-nav">
+            <button class="btn btn-sm" onclick="changeMonth(-1)">←</button>
+            <div class="month-label" id="month-label"></div>
+            <button class="btn btn-sm" onclick="changeMonth(1)">→</button>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#EBF5FF;border:1px solid #B3D4EF;"></div>午前の対応可能人数</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green-light);border:1px solid #9FE0C0;"></div>午後の対応可能人数</div>
+        </div>
+        <table class="cal-table">
+          <thead><tr>
+            <th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th class="sat">土</th><th class="sun">日</th>
+          </tr></thead>
+          <tbody id="cal-body"></tbody>
+        </table>
+      </div>
+
+      <div class="cal-side hidden" id="detail-panel">
+        <div class="detail-header">
+          <div>
+            <div class="detail-date-label" id="detail-date-label">日付を選択</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px;">相談員ごとの対応可否</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" onclick="closeDetail()">✕</button>
+        </div>
+        <div class="detail-body" id="detail-body"></div>
+        <div class="detail-footer">
+          <button class="btn btn-primary" style="width:100%" onclick="saveDetail()">変更を保存する</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 一覧タブ -->
+  <div id="tab-list" class="tab-content">
+    <div class="filter-bar">
+      <select class="form-input" id="filter-month" onchange="renderList()">
+      </select>
+      <select class="form-input" id="filter-slot" onchange="renderList()">
+        <option value="both">午前・午後どちらも</option>
+        <option value="AM">午前のみ</option>
+        <option value="PM">午後のみ</option>
+      </select>
+    </div>
+    <div class="counselor-grid" id="counselor-grid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+const COUNSELORS = [
+  { id:1, name:'山田 先生', spec:'メンタルヘルス・キャリア', bg:'#EEEDFC', fg:'#3C3489' },
+  { id:2, name:'中村 先生', spec:'家族・人間関係',           bg:'#E1F5EE', fg:'#085041' },
+  { id:3, name:'小林 先生', spec:'キャリア・学業',           bg:'#FAEEDA', fg:'#633806' },
+  { id:4, name:'加藤 先生', spec:'メンタルヘルス',           bg:'#FAECE7', fg:'#4A1B0C' },
+  { id:5, name:'松本 先生', spec:'家族・人間関係',           bg:'#EEEDFC', fg:'#3C3489' },
+  { id:6, name:'井上 先生', spec:'キャリア相談',             bg:'#E1F5EE', fg:'#085041' },
+];
+
+const now = new Date();
+let year = now.getFullYear(), month = now.getMonth();
+const avail = {};
+let selectedCell = null;
+
+function key(cid, y, m, d, s) { return `${cid}_${y}_${m}_${d}_${s}`; }
+function getAvail(cid, y, m, d, s) {
+  const k = key(cid, y, m, d, s);
+  if (!(k in avail)) avail[k] = Math.random() > 0.3;
+  return avail[k];
+}
+function setAvail(cid, y, m, d, s, v) { avail[key(cid, y, m, d, s)] = v; }
+
+function daysInMonth(y, m) { return new Date(y, m+1, 0).getDate(); }
+function firstDOW(y, m) { let d = new Date(y,m,1).getDay(); return d===0?6:d-1; }
+
+function renderMetrics() {
+  const dim = daysInMonth(year, month);
+  let totalAM = 0, totalPM = 0;
+  for (let d=1; d<=dim; d++) {
+    COUNSELORS.forEach(c => {
+      if (getAvail(c.id, year, month, d, 'AM')) totalAM++;
+      if (getAvail(c.id, year, month, d, 'PM')) totalPM++;
+    });
+  }
+  const avgAM = Math.round(totalAM / dim * 10) / 10;
+  const avgPM = Math.round(totalPM / dim * 10) / 10;
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">相談員数</div><div class="metric-value" style="color:var(--purple)">${COUNSELORS.length}</div></div>
+    <div class="metric"><div class="metric-label">今月の対応日数（延べ）</div><div class="metric-value" style="color:var(--green)">${totalAM + totalPM}</div></div>
+    <div class="metric"><div class="metric-label">1日平均（午前）</div><div class="metric-value" style="color:#1D5F8A">${avgAM}人</div></div>
+    <div class="metric"><div class="metric-label">1日平均（午後）</div><div class="metric-value" style="color:var(--green)">${avgPM}人</div></div>`;
+}
+
+function renderCal() {
+  document.getElementById('month-label').textContent = `${year}年 ${month+1}月`;
+  const tbody = document.getElementById('cal-body'); tbody.innerHTML = '';
+  const fd = firstDOW(year, month), dim = daysInMonth(year, month);
+  const prevDim = daysInMonth(year, month-1);
+  let day=1, prevDay=prevDim-fd+1, nextDay=1;
+  const total = Math.ceil((fd+dim)/7)*7;
+
+  for (let i=0; i<total; i++) {
+    if (i%7===0) tbody.insertRow();
+    const row = tbody.rows[tbody.rows.length-1];
+    const td = row.insertCell(); td.className = 'day-cell';
+    let cd, cy=year, cm=month, other=false;
+    if (i<fd) { cd=prevDay++; cm=month-1; other=true; if(cm<0){cm=11;cy--;} }
+    else if (day>dim) { cd=nextDay++; cm=month+1; other=true; if(cm>11){cm=0;cy++;} }
+    else { cd=day++; }
+    if (other) { td.classList.add('other-month'); const n=document.createElement('div'); n.className='day-num'; n.textContent=cd; td.appendChild(n); continue; }
+    const isToday = cy===now.getFullYear()&&cm===now.getMonth()&&cd===now.getDate();
+    if (isToday) td.classList.add('today');
+    const numDiv = document.createElement('div'); numDiv.className='day-num'; numDiv.textContent=cd; td.appendChild(numDiv);
+    const pills = document.createElement('div'); pills.className='slot-pills';
+    ['AM','PM'].forEach(s => {
+      const cnt = COUNSELORS.filter(c => getAvail(c.id, cy, cm, cd, s)).length;
+      const p = document.createElement('div');
+      p.className = 'slot-pill ' + (cnt>0 ? (s==='AM'?'pill-am':'pill-pm') : 'pill-none');
+      p.innerHTML = `<span class="pill-label">${s==='AM'?'午前':'午後'}</span><span class="pill-count">${cnt}人</span>`;
+      pills.appendChild(p);
+    });
+    td.appendChild(pills);
+    const _cy=cy,_cm=cm,_cd=cd;
+    td.onclick = () => openDetail(_cy,_cm,_cd,td);
+  }
+  renderMetrics();
+}
+
+function openDetail(y, m, d, tdEl) {
+  if (selectedCell) selectedCell.classList.remove('selected');
+  selectedCell = tdEl; tdEl.classList.add('selected');
+  const panel = document.getElementById('detail-panel'); panel.classList.remove('hidden');
+  const wk = ['月','火','水','木','金','土','日'];
+  const dw = new Date(y,m,d).getDay();
+  document.getElementById('detail-date-label').textContent = `${y}年${m+1}月${d}日（${wk[dw===0?6:dw-1]}）`;
+  const body = document.getElementById('detail-body'); body.innerHTML='';
+  panel.dataset.y=y; panel.dataset.m=m; panel.dataset.d=d;
+  ['AM','PM'].forEach(slot => {
+    const sec = document.createElement('div'); sec.className='slot-block';
+    sec.innerHTML = `<div class="slot-block-title">${slot==='AM'?'☀ 午前':'🌙 午後'}</div>`;
+    COUNSELORS.forEach(c => {
+      const av = getAvail(c.id,y,m,d,slot);
+      const row = document.createElement('div'); row.className='counselor-row';
+      row.innerHTML = `
+        <div class="counselor-info">
+          <div class="avatar" style="background:${c.bg};color:${c.fg}">${c.name[0]}</div>
+          <div><div class="cn-name">${c.name}</div><div class="cn-spec">${c.spec}</div></div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <span class="toggle-label">${av?'対応可':'不可'}</span>
+          <button class="toggle ${av?'on':''}" data-cid="${c.id}" data-y="${y}" data-m="${m}" data-d="${d}" data-slot="${slot}" onclick="toggleDetail(this)"></button>
+        </div>`;
+      sec.appendChild(row);
+    });
+    body.appendChild(sec);
+  });
+}
+
+function toggleDetail(btn) {
+  const {cid,y,m,d,slot} = btn.dataset;
+  const cur = getAvail(+cid,+y,+m,+d,slot);
+  setAvail(+cid,+y,+m,+d,slot,!cur);
+  btn.classList.toggle('on');
+  btn.previousElementSibling.textContent = !cur?'対応可':'不可';
+  renderCal();
+  if(selectedCell) selectedCell.classList.add('selected');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.add('hidden');
+  if (selectedCell) { selectedCell.classList.remove('selected'); selectedCell=null; }
+}
+
+function saveDetail() { showToast('対応可否を保存しました'); renderCal(); }
+
+function changeMonth(d) {
+  month += d;
+  if (month<0){month=11;year--;} if (month>11){month=0;year++;}
+  closeDetail(); renderCal(); renderList(); initFilterMonth();
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function initFilterMonth() {
+  const sel = document.getElementById('filter-month');
+  sel.innerHTML = '';
+  for (let i=-1; i<=2; i++) {
+    let m2 = month+i, y2 = year;
+    if(m2<0){m2+=12;y2--;} if(m2>11){m2-=12;y2++;}
+    const opt = document.createElement('option');
+    opt.value=`${y2}_${m2}`; opt.textContent=`${y2}年${m2+1}月`;
+    if(i===0) opt.selected=true;
+    sel.appendChild(opt);
+  }
+}
+
+function renderList() {
+  const [fy,fm] = document.getElementById('filter-month').value.split('_').map(Number);
+  const slotFilter = document.getElementById('filter-slot').value;
+  const dim = daysInMonth(fy, fm);
+  const grid = document.getElementById('counselor-grid'); grid.innerHTML='';
+  COUNSELORS.forEach(c => {
+    const card = document.createElement('div'); card.className='counselor-card';
+    card.innerHTML = `<div class="card-header"><div class="avatar" style="background:${c.bg};color:${c.fg};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${c.name[0]}</div><div><div class="card-name">${c.name}</div><div class="card-spec">${c.spec}</div></div></div>`;
+    const body = document.createElement('div'); body.className='card-body';
+    let count=0;
+    for (let d=1; d<=Math.min(dim,7); d++) {
+      const amOk=getAvail(c.id,fy,fm,d,'AM'), pmOk=getAvail(c.id,fy,fm,d,'PM');
+      if (slotFilter==='AM' && !amOk) continue;
+      if (slotFilter==='PM' && !pmOk) continue;
+      const row = document.createElement('div'); row.className='slot-row';
+      const wk=['月','火','水','木','金','土','日'];
+      const dw=new Date(fy,fm,d).getDay();
+      row.innerHTML = `
+        <span class="slot-date">${fm+1}/${d}（${wk[dw===0?6:dw-1]}）</span>
+        <div class="slot-badges">
+          <span class="slot-badge ${amOk?'badge-ok':'badge-ng'}">午前 ${amOk?'○':'✕'}</span>
+          <span class="slot-badge ${pmOk?'badge-ok':'badge-ng'}">午後 ${pmOk?'○':'✕'}</span>
+        </div>`;
+      body.appendChild(row);
+      count++;
+    }
+    if (count===0) { const e=document.createElement('div'); e.style.cssText='font-size:12px;color:var(--text3);padding:8px 0;text-align:center;'; e.textContent='対応可能な日程がありません'; body.appendChild(e); }
+    const more = document.createElement('div');
+    more.style.cssText='font-size:11px;color:var(--text2);padding:6px 0;text-align:center;border-top:1px solid var(--border);margin-top:4px;';
+    more.textContent=`全${dim}日分のデータあり`;
+    body.appendChild(more);
+    card.appendChild(body); grid.appendChild(card);
+  });
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+initFilterMonth(); renderCal(); renderList();
+</script>
+</body>
+</html>
